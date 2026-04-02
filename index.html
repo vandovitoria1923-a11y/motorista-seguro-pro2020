@@ -1,0 +1,1604 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Motorista Seguro Pro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    :root{
+      --bg:#07111f;
+      --bg-deep:#020814;
+      --card:rgba(15,25,44,.95);
+      --glass:rgba(13,25,48,.85);
+      --line:rgba(88,173,255,.18);
+      --primary:#2aa7ff;
+      --primary2:#00e1ff;
+      --primary-glow:rgba(42,167,255,.4);
+      --neon-blue:#00d2ff;
+      --neon-purple:#7000ff;
+      --ok:#35d07f;
+      --success:#00ffa3;
+      --warn:#ffd166;
+      --danger:#ff4d6d;
+      --danger-2:#ff2d55;
+      --text:#eef6ff;
+      --text-main:#ffffff;
+      --muted:#9db4cf;
+      --text-dim:#94a3b8;
+      --border:rgba(255,255,255,.1);
+      --shadow:0 18px 40px rgba(0,0,0,.35);
+      --safe-bottom:156px;
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',Arial,Helvetica,sans-serif}
+    html,body{
+      min-height:100vh;
+      background:
+        radial-gradient(circle at top right, rgba(0,225,255,.12), transparent 25%),
+        linear-gradient(180deg,#07111f 0%,#09182c 45%,#0b1f36 100%);
+      color:var(--text);
+    }
+    body{overflow-x:hidden}
+    .hidden{display:none!important}
+
+    .alert-banner{
+      display:none;position:fixed;top:14px;left:50%;transform:translateX(-50%);
+      width:min(560px,calc(100% - 24px));z-index:10080;background:rgba(255,77,109,.96);
+      color:#fff;padding:14px;border-radius:18px;border:1px solid rgba(255,255,255,.16);
+      box-shadow:0 18px 36px rgba(255,77,109,.30);font-size:14px;font-weight:900;text-align:center;
+    }
+
+    .jarvis-splash{
+      position:fixed;inset:0;background:#050b15;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;z-index:10070;color:#00e1ff;text-align:center;padding:20px;
+    }
+    .jarvis-core{
+      width:130px;height:130px;border-radius:50%;
+      background:radial-gradient(circle, rgba(0,225,255,.95) 0%, rgba(0,225,255,.18) 40%, transparent 72%);
+      animation:pulse 1.6s infinite;margin-bottom:20px;box-shadow:0 0 40px rgba(0,225,255,.25);
+    }
+    @keyframes pulse{0%{transform:scale(.92);opacity:.65}50%{transform:scale(1.08);opacity:1}100%{transform:scale(.92);opacity:.65}}
+    .jarvis-splash h1{font-size:34px;letter-spacing:5px;margin-bottom:10px}
+    .jarvis-splash p{font-size:14px;color:#b7f7ff}
+
+    .auth-wrap,.hero-wrap,.start-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+    .hero-card,.start-card{
+      width:min(520px,100%);background:var(--card);border:1px solid var(--line);border-radius:30px;
+      box-shadow:var(--shadow);padding:24px;overflow:hidden;position:relative;
+    }
+    .hero-card::before,.start-card::before{
+      content:"";position:absolute;right:-80px;bottom:-80px;width:220px;height:220px;border-radius:50%;
+      background:radial-gradient(circle, rgba(42,167,255,.20), transparent 70%);pointer-events:none;
+    }
+
+    /* LOGIN NOVO */
+    .login-card{
+      background:var(--card);
+      width:100%;
+      max-width:400px;
+      padding:40px 30px;
+      border-radius:32px;
+      border:1px solid rgba(255,255,255,.1);
+      backdrop-filter:blur(10px);
+      box-shadow:0 25px 50px -12px rgba(0,0,0,.5);
+      text-align:center;
+    }
+    .logo-box{
+      display:flex;
+      align-items:center;
+      gap:15px;
+      margin-bottom:35px;
+      justify-content:center;
+    }
+    .icon-shield{
+      width:60px;
+      height:60px;
+      background:linear-gradient(135deg,#2aa7ff,#0066ff);
+      border-radius:16px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow:0 0 20px var(--primary-glow);
+      flex-shrink:0;
+    }
+    .app-name{text-align:left}
+    .app-name h1{
+      font-size:26px;
+      font-weight:800;
+      line-height:1.1;
+      color:var(--text);
+      letter-spacing:-.5px;
+    }
+    .app-name p{
+      font-size:13px;
+      color:var(--text-dim);
+      margin-top:4px;
+    }
+    .btn-group{display:flex;gap:10px;margin-bottom:25px}
+    .btn{
+      flex:1;
+      padding:14px;
+      border-radius:14px;
+      border:none;
+      font-weight:600;
+      font-size:15px;
+      cursor:pointer;
+      transition:.3s;
+    }
+    .btn-primary{
+      background:var(--primary);
+      color:#fff;
+      box-shadow:0 4px 15px var(--primary-glow);
+    }
+    .btn-outline{
+      background:rgba(255,255,255,.05);
+      color:#fff;
+      border:1px solid rgba(255,255,255,.1);
+    }
+    .social-btn{
+      width:100%;
+      padding:14px;
+      border-radius:14px;
+      margin-bottom:12px;
+      border:none;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      font-weight:600;
+      font-size:15px;
+      cursor:pointer;
+    }
+    .social-btn.google{background:#fff;color:#1e293b}
+    .social-btn.facebook{background:#1877f2;color:#fff}
+    .divider{
+      color:var(--text-dim);
+      font-size:13px;
+      margin:20px 0;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .divider::before,.divider::after{
+      content:"";
+      flex:1;
+      height:1px;
+      background:rgba(255,255,255,.1);
+    }
+    .login-card input{
+      width:100%;
+      padding:16px;
+      background:rgba(0,0,0,.2);
+      border:1px solid rgba(255,255,255,.1);
+      border-radius:14px;
+      color:#fff;
+      margin-bottom:20px;
+      font-size:15px;
+      outline:none;
+    }
+    .login-card input::placeholder{color:#8ca2be}
+    .login-card input:focus{
+      border-color:var(--primary);
+      box-shadow:0 0 0 3px var(--primary-glow);
+    }
+    .btn-main{
+      width:100%;
+      padding:16px;
+      background:linear-gradient(to right,#2aa7ff,#00d2ff);
+      color:#fff;
+      border:none;
+      border-radius:14px;
+      font-weight:800;
+      font-size:16px;
+      text-transform:uppercase;
+      letter-spacing:1px;
+      cursor:pointer;
+      box-shadow:0 10px 20px rgba(42,167,255,.3);
+    }
+    .footer-info{
+      margin-top:25px;
+      font-size:12px;
+      color:var(--text-dim);
+      line-height:1.5;
+    }
+    .price-tag{color:#10b981;font-weight:600}
+
+    .hero-title{font-size:30px;font-weight:900;line-height:1.05}
+    .hero-sub,.mini-note,.auth-note,.quick-access-note{color:var(--muted);font-size:13px;line-height:1.45}
+    .hero-title span{color:var(--primary2)}
+    .hero-sub{margin-bottom:18px;text-align:center}
+    .hero-card,.start-card{text-align:center}
+    .hero-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+    .hero-stat,.mini-stat,.info-box{
+      background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:14px 10px;text-align:center;
+    }
+    .hero-stat strong,.mini-stat strong,.info-box strong{display:block;font-size:18px;margin-bottom:5px}
+    .hero-stat span,.mini-stat span,.info-box span{font-size:12px;color:var(--muted)}
+    .hero-actions,.form-grid,.settings-group,.row-list,.btn-grid-2,.btn-grid-3{display:grid;gap:12px}
+    .btn-grid-2{grid-template-columns:repeat(2,1fr)}
+    .btn-grid-3{grid-template-columns:repeat(3,1fr)}
+
+    .primary-btn,.secondary-btn,.danger-btn,.control-btn,.menu-btn,.menu-icon,.small-icon-btn,.start-main-btn,.start-sos-btn{
+      border:none;border-radius:16px;padding:14px;font-size:14px;font-weight:900;cursor:pointer;color:#fff;
+    }
+    .primary-btn,.start-main-btn{background:linear-gradient(135deg,var(--primary),var(--primary2))}
+    .secondary-btn,.menu-icon,.small-icon-btn,.menu-btn,.control-btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)}
+    .danger-btn,.start-sos-btn{background:linear-gradient(135deg,#ff4d6d,#ff214c)}
+
+    .input-wrap{display:grid;gap:7px}
+    .input-wrap label{font-size:13px;color:#dcecff;font-weight:700}
+    .input-wrap input,.input-wrap select,.input-wrap textarea{
+      width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10);color:#fff;border-radius:16px;padding:14px;outline:none;font-size:14px;
+    }
+    .input-wrap input::placeholder,.input-wrap textarea::placeholder{color:#8ca2be}
+    textarea{resize:vertical;min-height:90px}
+
+    .start-screen{background:#020816}
+    .scanner{position:relative;border-radius:28px;overflow:hidden;min-height:560px;background:linear-gradient(180deg, rgba(4,8,22,.20), rgba(4,8,22,.80)),radial-gradient(circle at center, rgba(255,40,84,.14), transparent 28%);border:1px solid rgba(255,255,255,.08)}
+    .scan-line{position:absolute;left:0;right:0;height:4px;background:linear-gradient(90deg, transparent, rgba(0,225,255,.96), transparent);box-shadow:0 0 20px rgba(0,225,255,.45);animation:scan 4s ease-in-out infinite;z-index:2}
+    @keyframes scan{0%{top:18%}50%{top:76%}100%{top:18%}}
+    .radar{position:absolute;left:50%;top:48%;width:250px;height:250px;transform:translate(-50%,-50%);border-radius:50%;border:3px solid rgba(255,40,84,.92);box-shadow:0 0 30px rgba(255,40,84,.16), inset 0 0 25px rgba(255,40,84,.10);z-index:2;animation:radarPulse 2.2s infinite}
+    @keyframes radarPulse{0%{transform:translate(-50%,-50%) scale(.98)}50%{transform:translate(-50%,-50%) scale(1.02)}100%{transform:translate(-50%,-50%) scale(.98)}}
+    .start-top,.start-bottom{position:absolute;left:0;right:0;z-index:3;padding:18px}
+    .start-top{top:0;display:flex;justify-content:space-between;gap:10px}
+    .start-title{position:absolute;left:0;right:0;top:78px;z-index:3;text-align:center;padding:0 18px}
+    .start-title h1{font-size:26px;font-weight:900;margin-bottom:6px}
+    .start-title p{font-size:13px;color:#d8e7ff}
+    .start-bottom{bottom:24px;display:grid;gap:12px;justify-items:center}
+    .start-status-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+    .glass-pill{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.12);color:#fff;padding:10px 14px;border-radius:18px;backdrop-filter:blur(10px);font-size:13px;font-weight:700}
+    .start-main-btn,.start-sos-btn{width:min(380px,100%);border-radius:999px;font-size:18px}
+
+    .sidebar{position:fixed;left:0;top:0;bottom:0;width:300px;background:rgba(7,17,31,.98);border-right:1px solid rgba(255,255,255,.08);transform:translateX(-100%);transition:transform .25s ease;z-index:10000;padding:16px;overflow-y:auto}
+    .sidebar.open{transform:translateX(0)}
+    .sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:9999}
+    .sidebar-overlay.show{display:block}
+    .sidebar-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:16px}
+    .profile-box{display:flex;gap:12px;align-items:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:14px;margin-bottom:16px}
+    .avatar{width:54px;height:54px;border-radius:18px;background:linear-gradient(135deg,var(--primary),var(--primary2));display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;flex-shrink:0}
+    .profile-box strong{display:block;font-size:15px}
+    .profile-box small{display:block;color:var(--muted);font-size:12px;margin-top:4px;line-height:1.35}
+    .menu-list{display:grid;gap:10px}
+    .menu-btn{text-align:left}
+    .menu-btn.active{background:linear-gradient(135deg, rgba(42,167,255,.92), rgba(0,225,255,.72));border:none}
+
+    .main{width:100%;max-width:560px;margin:0 auto;padding:16px 16px calc(var(--safe-bottom) + 18px)}
+    .topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}
+    .brand-mini h2{font-size:24px;font-weight:900;line-height:1.05}
+    .brand-mini p{margin-top:5px;color:var(--muted);font-size:12px}
+    .card,.glass-card{background:var(--card);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow);padding:16px;margin-bottom:14px;transition:all .5s ease}
+    .glass-card.collapsed{max-height:56px!important;opacity:.65;overflow:hidden;border-color:var(--neon-blue);filter:grayscale(.35)}
+    .section-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px}
+    .section-head h3{font-size:18px;font-weight:900}
+    .section-head p{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.45}
+    .screen-panel{display:none}
+    .screen-panel.active{display:block}
+    .stats-grid,.info-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    .row-item,.setting-row,.message-box{padding:12px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)}
+    .row-item{display:flex;justify-content:space-between;align-items:center;gap:10px}
+    .row-item strong{display:block;font-size:13px;margin-bottom:4px}
+    .row-item small{display:block;font-size:12px;color:var(--muted);line-height:1.35}
+    .signal{padding:6px 10px;border-radius:999px;font-size:11px;font-weight:900;flex-shrink:0}
+    .good{background:rgba(53,208,127,.14);color:#cffff0;border:1px solid rgba(53,208,127,.30)}
+    .warn{background:rgba(255,209,102,.14);color:#ffe8b0;border:1px solid rgba(255,209,102,.30)}
+    .danger{background:rgba(255,77,109,.14);color:#ffd4dc;border:1px solid rgba(255,77,109,.30)}
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .code-box{background:rgba(0,225,255,.08);border:1px solid rgba(0,225,255,.24);color:#dffbff;border-radius:16px;padding:14px;text-align:center;font-size:18px;font-weight:900;letter-spacing:1px;margin-bottom:12px;word-break:break-all}
+    #map{width:100%;height:360px;border-radius:18px;border:1px solid rgba(255,255,255,.08);overflow:hidden}
+    .map-controls{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
+    .setting-row{display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .setting-row strong{font-size:13px}
+    .setting-row small{display:block;font-size:12px;color:var(--muted);margin-top:4px}
+    .toggle{position:relative;width:50px;height:28px;appearance:none;background:#34455f;border-radius:999px;outline:none;cursor:pointer}
+    .toggle:checked{background:#2aa7ff}
+    .toggle::before{content:"";position:absolute;width:22px;height:22px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.2s}
+    .toggle:checked::before{left:25px}
+    .switch{position:relative;width:45px;height:22px;display:inline-block}
+    .switch input{opacity:0;width:0;height:0}
+    .slider-round{position:absolute;cursor:pointer;inset:0;background:rgba(255,255,255,0.1);border-radius:34px;transition:.4s;border:1px solid rgba(0,210,255,0.2)}
+    .slider-round:before{position:absolute;content:"";height:14px;width:14px;left:4px;bottom:3px;background:#fff;transition:.4s;border-radius:50%}
+    .switch input:checked + .slider-round{background:var(--neon-blue);box-shadow:0 0 12px var(--neon-blue)}
+    .switch input:checked + .slider-round:before{transform:translateX(23px)}
+    .time-slider{-webkit-appearance:none;width:100%;height:6px;background:rgba(255,255,255,0.1);border-radius:10px;margin:15px 0}
+    .time-slider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;background:var(--neon-blue);border-radius:50%;box-shadow:0 0 10px var(--neon-blue);cursor:pointer}
+
+    .ride-card-overlay{position:fixed;left:50%;bottom:calc(var(--safe-bottom) + 6px);transform:translateX(-50%);width:min(360px, calc(100vw - 24px));max-width:calc(100vw - 24px);min-width:260px;max-height:66vh;background:#fff;color:#000;border-radius:24px;box-shadow:0 18px 40px rgba(0,0,0,.35);z-index:10020;overflow:auto;display:none;border:4px solid #35d07f}
+    .ride-card-overlay.good-border{border-color:#35d07f}
+    .ride-card-overlay.warn-border{border-color:#ffd166}
+    .ride-card-overlay.bad-border{border-color:#ff4d6d}
+    .ride-top{display:flex;justify-content:space-between;gap:10px;background:#f4f6f9;padding:12px;position:sticky;top:0}
+    .metric{display:grid;gap:4px}
+    .metric span{font-size:11px;color:#666}
+    .metric strong{font-size:18px}
+    .ride-info{display:grid;text-align:right;gap:4px;font-size:12px;color:#333;font-weight:700}
+    .ride-body{padding:14px}
+    .ride-body h1{font-size:32px;margin-bottom:4px}
+    .ride-rating{font-size:13px;color:#666;margin-bottom:10px}
+    .route p{margin:5px 0;font-size:14px}
+    .ride-details{display:flex;justify-content:space-between;gap:10px;margin-top:10px;font-size:13px;color:#555;flex-wrap:wrap}
+    .ride-analysis{margin:0 14px 10px;padding:10px;border-radius:14px;font-weight:900;text-align:center}
+    .jarvis-msg-card{margin:0 14px 14px;font-size:13px;text-align:center;color:#333}
+    .ride-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:0 14px 14px}
+    .ride-actions button{border:none;border-radius:14px;padding:12px;font-size:12px;font-weight:900;cursor:pointer}
+    .btn-accept{background:#2a7cff;color:#fff}
+    .btn-hide{background:#edf2f8;color:#123}
+    .btn-grow{background:#dff6ff;color:#005b74}
+
+    .fab-sos,#sosBtn{position:fixed;right:14px;bottom:92px;width:64px;height:64px;border:none;border-radius:50%;color:#fff;font-size:22px;font-weight:900;cursor:pointer;z-index:9997;background:linear-gradient(135deg,#ff4d6d,#ff214c);box-shadow:0 18px 36px rgba(255,77,109,.35)}
+    #sosBtn{animation:sosPulse 2s infinite}
+    @keyframes sosPulse{0%{transform:scale(1);box-shadow:0 0 20px var(--danger)}50%{transform:scale(1.05);box-shadow:0 0 38px var(--danger)}100%{transform:scale(1);box-shadow:0 0 20px var(--danger)}}
+
+    .bottom-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:12px;width:min(520px, calc(100% - 24px));background:rgba(10,20,36,.94);border:1px solid rgba(255,255,255,.08);box-shadow:var(--shadow);border-radius:24px;display:grid;grid-template-columns:repeat(5,1fr);padding:10px 8px;z-index:9996;backdrop-filter:blur(12px)}
+    .nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--muted);font-size:11px;text-align:center;cursor:pointer;min-height:56px}
+    .nav-item.active{color:#fff}
+    .payment-box{display:grid;gap:12px;text-align:center}
+    .payment-qr{width:220px;height:220px;margin:0 auto;background:#fff;border-radius:20px;padding:12px;box-shadow:0 0 26px rgba(0,225,255,.16)}
+    .payment-qr img{width:100%;height:100%;object-fit:contain;border-radius:12px}
+    .premium-badge{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 14px;border-radius:999px;background:rgba(0,225,255,.08);border:1px solid rgba(0,225,255,.24);color:#dffbff;font-size:12px;font-weight:900;margin:0 auto}
+
+    @media (max-width:520px){
+      .logo-box{align-items:center}
+      .social-grid,.two-col,.btn-grid-2,.btn-grid-3{grid-template-columns:1fr}
+      .hero-stats,.stats-grid,.info-grid{grid-template-columns:repeat(2,1fr)}
+      .map-controls{grid-template-columns:repeat(2,1fr)}
+      .brand-mini h2{font-size:22px}
+      .ride-card-overlay{width:calc(100vw - 20px);max-width:calc(100vw - 20px)}
+      .ride-body h1{font-size:28px}
+      .start-title h1{font-size:24px}
+      .login-card{padding:32px 22px}
+      .app-name h1{font-size:24px}
+    }
+  </style>
+</head>
+<body>
+  <div class="alert-banner" id="alertBanner">Mensagem</div>
+
+  <div id="jarvisSplash" class="jarvis-splash hidden">
+    <div class="jarvis-core"></div>
+    <h1>JARVIS</h1>
+    <p id="jarvisStatus">Inicializando sistema...</p>
+  </div>
+
+  <section id="loginScreen" class="auth-wrap">
+    <div class="login-card">
+      <div class="logo-box">
+        <div class="icon-shield">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+        </div>
+        <div class="app-name">
+          <h1>Motorista<br>Seguro Pro</h1>
+          <p>Proteção em tempo real</p>
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn btn-primary" id="tabLogin">Entrar</button>
+        <button class="btn btn-outline" id="tabCadastro">Cadastrar</button>
+      </div>
+
+      <form id="formLogin">
+        <button type="button" class="social-btn google" onclick="entrarGoogle()">
+          <img src="https://www.google.com/favicon.ico" width="18" alt="Google"> Entrar com Google
+        </button>
+
+        <button type="button" class="social-btn facebook" onclick="entrarFacebook()">
+          <svg width="18" height="18" fill="white" viewBox="0 0 24 24">
+            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+          </svg>
+          Entrar com Facebook
+        </button>
+
+        <div class="divider">ou use seu e-mail</div>
+
+        <input type="text" id="loginRapido" placeholder="E-mail ou (91) 99999-9999">
+
+        <button type="button" class="btn-main" onclick="entrarDireto()">Entrar no Aplicativo</button>
+      </form>
+
+      <form id="formCadastro" class="hidden">
+        <input type="text" id="cadNome" placeholder="Seu nome">
+        <input type="text" id="cadContato" placeholder="E-mail ou telefone">
+        <input type="text" id="cadCidade" placeholder="Cidade">
+        <button type="button" class="btn-main" onclick="cadastrarDireto()">Criar conta</button>
+      </form>
+
+      <p class="footer-info">
+        30 dias grátis com todas as funções liberadas.<br>
+        Depois: <span class="price-tag">R$ 9,90 por mês via Pix.</span>
+      </p>
+    </div>
+  </section>
+
+  <section id="welcomeScreen" class="hero-wrap hidden">
+    <div class="hero-card">
+      <div class="icon-shield" style="margin:0 auto 14px;">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 17h14"></path>
+          <path d="M7 17l1.2-5h7.6l1.2 5"></path>
+          <path d="M7 10l2-4h6l2 4"></path>
+          <circle cx="8" cy="18.5" r="1.2" fill="white" stroke="none"></circle>
+          <circle cx="16" cy="18.5" r="1.2" fill="white" stroke="none"></circle>
+        </svg>
+      </div>
+      <div class="hero-title">Bem-vindo ao <span>Motorista Seguro Pro</span></div>
+      <div class="hero-sub">Sistema inteligente com mapa, segurança, tradutor, câmeras, Jarvis e controle de corridas.</div>
+
+      <div class="hero-stats">
+        <div class="hero-stat"><strong id="heroDrivers">18</strong><span>Online</span></div>
+        <div class="hero-stat"><strong>Centro</strong><span>Melhor área</span></div>
+        <div class="hero-stat"><strong id="trialDaysHero">30 dias</strong><span>Teste grátis</span></div>
+      </div>
+
+      <div class="hero-actions">
+        <button class="primary-btn" id="openStartScreenBtn">Ir para tela inicial</button>
+        <button class="secondary-btn" id="logoutWelcomeBtn">Voltar</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="startScreen" class="start-screen hidden">
+    <div class="start-card">
+      <div class="scanner">
+        <div class="scan-line"></div>
+        <div class="radar"></div>
+
+        <div class="start-top">
+          <div class="glass-pill" id="startJarvisStatus">Jarvis: Sistema ativo</div>
+          <div class="glass-pill" id="startBatteryInfo">Bateria 100%</div>
+        </div>
+
+        <div class="start-title">
+          <h1>Motorista Seguro Pro</h1>
+          <p id="startSubText">Assistente IA para carro e moto</p>
+        </div>
+
+        <div class="start-bottom">
+          <div class="start-status-row">
+            <div class="glass-pill" id="startSpeedInfo">Velocidade 0 km/h</div>
+            <div class="glass-pill" id="startTrackInfo">Rastreamento ON</div>
+          </div>
+          <button class="start-main-btn" id="goToAppBtn">Iniciar viagem</button>
+          <button class="start-sos-btn" id="startEmergencyBtn">Modo emergência</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="appScreen" class="hidden">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-top">
+        <strong>Menu lateral</strong>
+        <button class="small-icon-btn" id="closeSidebarBtn">✕</button>
+      </div>
+
+      <div class="profile-box">
+        <div class="avatar" id="sidebarAvatar">M</div>
+        <div>
+          <strong id="sidebarName">Motorista</strong>
+          <small id="sidebarCity">Sua cidade • Motorista premium</small>
+        </div>
+      </div>
+
+      <div class="menu-list">
+        <button class="menu-btn active" data-panel="inicioPanel">🏠 Início</button>
+        <button class="menu-btn" data-panel="mapaPanel">🗺️ Mapa</button>
+        <button class="menu-btn" data-panel="curralPanel">🛡️ Curral</button>
+        <button class="menu-btn" data-panel="cameraPanel">📷 Câmeras</button>
+        <button class="menu-btn" data-panel="tradutorPanel">🌍 Tradutor</button>
+        <button class="menu-btn" data-panel="configPanel">⚙️ Configurações</button>
+        <button class="menu-btn" data-panel="compartilharPanel">📲 Compartilhar</button>
+        <button class="menu-btn" data-panel="indicaPanel">👥 Indica</button>
+        <button class="menu-btn" data-panel="vozPanel">🎙️ Jarvis</button>
+        <button class="menu-btn" data-panel="musicaPanel">🎵 Música</button>
+        <button class="menu-btn" data-panel="pagamentoPanel">💳 Pagamento</button>
+        <button class="menu-btn" data-panel="perfilPanel">👤 Perfil</button>
+        <button class="menu-btn" id="logoutBtn">🚪 Sair</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <button class="menu-icon" id="openSidebarBtn">☰</button>
+          <div class="brand-mini">
+            <h2>Motorista <span style="color:var(--primary2)">Seguro Pro</span></h2>
+            <p>Versão final • unificada • estável</p>
+          </div>
+        </div>
+        <button class="small-icon-btn" id="topNotifBtn">🔔</button>
+      </div>
+
+      <section id="inicioPanel" class="screen-panel active">
+        <div id="ganhosModule" class="glass-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+            <div>
+              <p style="color:var(--text-dim);font-size:10px;text-transform:uppercase;">Ganhos Hoje</p>
+              <h2 style="color:var(--success);font-size:26px;">R$ 150,00</h2>
+            </div>
+            <div style="text-align:right;">
+              <p style="color:var(--text-dim);font-size:10px;">Status</p>
+              <span style="background:rgba(0,255,163,.1);color:var(--success);padding:4px 8px;border-radius:6px;font-size:10px;font-weight:bold;">ATIVO</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="jarvisModule" class="glass-card">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+            <div style="width:10px;height:10px;background:var(--neon-blue);border-radius:50%;box-shadow:0 0 8px var(--neon-blue);"></div>
+            <strong style="font-size:12px;color:var(--neon-blue);">JARVIS TÁTICO</strong>
+          </div>
+          <p id="jarvisText" style="font-size:11px;line-height:1.5;color:#fff;">Monitoramento em Belém. Perímetro seguro ativo.</p>
+        </div>
+
+        <div class="card">
+          <div class="section-head">
+            <div>
+              <h3>Painel inicial</h3>
+              <p>Resumo rápido do sistema.</p>
+            </div>
+          </div>
+          <div class="stats-grid">
+            <div class="mini-stat"><strong id="driversCount">18</strong><span>Online</span></div>
+            <div class="mini-stat"><strong id="bestZone">Centro</strong><span>Melhor área</span></div>
+            <div class="mini-stat"><strong id="riskLevel">Baixo</strong><span>Risco</span></div>
+            <div class="mini-stat"><strong id="trialStatus">30</strong><span>Dias grátis</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-head">
+            <div>
+              <h3>Jarvis ativo</h3>
+              <p id="jarvisMessage">Centro está melhor para corridas. Monitoramento discreto ativo.</p>
+            </div>
+            <div style="width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle, rgba(0,225,255,.55), rgba(42,167,255,.16) 45%, transparent 70%);border:1px solid rgba(0,225,255,.28);">◉</div>
+          </div>
+          <div class="mini-note" id="jarvisSuggestionStatus">Jarvis analisando recursos disponíveis.</div>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="section-head"><div><h3>Áreas</h3><p>Fluxo ao vivo</p></div></div>
+            <div class="row-list">
+              <div class="row-item"><div><strong>Centro</strong><small>Boa demanda e menos concorrência</small></div><div class="signal good">Boa</div></div>
+              <div class="row-item"><div><strong>Batista Campos</strong><small>Movimento equilibrado</small></div><div class="signal warn">Média</div></div>
+              <div class="row-item"><div><strong>Marco</strong><small>Muitos carros ativos</small></div><div class="signal danger">Lotada</div></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="section-head"><div><h3>Segurança</h3><p>Status rápido</p></div></div>
+            <div class="row-list">
+              <div class="row-item"><div><strong>Modo família</strong><small>Compartilhamento ativo</small></div><div class="signal good">Ativo</div></div>
+              <div class="row-item"><div><strong>Área perigosa</strong><small id="dangerZoneText">Nenhum alerta grave próximo</small></div><div class="signal warn" id="dangerZoneStatus">Monitorando</div></div>
+              <div class="row-item"><div><strong>Backup</strong><small id="backupStatusText">Dados protegidos na conta</small></div><div class="signal good">Seguro</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-head">
+            <div>
+              <h3>Cartão inteligente da corrida</h3>
+              <p>Borda verde, amarela ou vermelha.</p>
+            </div>
+            <div class="signal good" id="rideScore">🟢 BOA</div>
+          </div>
+
+          <div class="info-grid">
+            <div class="info-box"><strong id="ridePrice">R$ 18,50</strong><span>Valor</span></div>
+            <div class="info-box"><strong id="rideKm">6,8 km</strong><span>Distância</span></div>
+            <div class="info-box"><strong id="rideMin">17 min</strong><span>Tempo</span></div>
+            <div class="info-box"><strong id="rideProfit">R$ 2,72/km</strong><span>Retorno</span></div>
+          </div>
+
+          <div class="message-box" id="rideMessage">Corrida recomendada. Boa relação entre valor, distância e área de destino.</div>
+
+          <div class="btn-grid-2" style="margin-top:12px">
+            <button class="primary-btn" id="btnRide">Simular corrida</button>
+            <button class="secondary-btn" id="showOverlayBtn">Mostrar cartão</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="mapaPanel" class="screen-panel">
+        <div class="card">
+          <div class="section-head">
+            <div>
+              <h3>Mapa premium</h3>
+              <p>Carros online, postos e áreas de risco.</p>
+            </div>
+            <div class="signal good" id="mapBadge">🟢 Ativo</div>
+          </div>
+          <div id="map"></div>
+          <div class="map-controls">
+            <button class="control-btn secondary-btn" id="btnCenter">📍 Centralizar</button>
+            <button class="control-btn secondary-btn" id="btnDanger">⚠️ Ver risco</button>
+            <button class="control-btn secondary-btn" id="btnMapRide">🚕 Corrida</button>
+            <button class="control-btn secondary-btn" id="btnClearRoute">🧭 Limpar rota</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="curralPanel" class="screen-panel">
+        <div class="card">
+          <div class="section-head">
+            <div>
+              <h3>Curral invisível</h3>
+              <p>Modo manual e automático com raio real.</p>
+            </div>
+            <div class="signal warn" id="curralStatusBadge">🟢 Automático</div>
+          </div>
+          <div class="info-grid">
+            <div class="info-box"><strong id="curralState">AUTO</strong><span>Estado</span></div>
+            <div class="info-box"><strong id="curralInside">Dentro</strong><span>Posição</span></div>
+            <div class="info-box"><strong id="curralDrivers">8</strong><span>Na área</span></div>
+            <div class="info-box"><strong id="nextSend">--:--</strong><span>Próximo envio</span></div>
+          </div>
+          <div class="form-grid">
+            <div class="input-wrap"><label>Modo do curral</label><select id="curralMode"><option value="automatico">100% automático</option><option value="manual">Manual no mapa</option></select></div>
+            <div class="input-wrap"><label>Raio manual</label><select id="curralRadius"><option value="1">1 km</option><option value="5">5 km</option><option value="10">10 km</option><option value="20">20 km</option><option value="50">50 km</option><option value="100">100 km</option><option value="200">200 km</option><option value="500">500 km</option></select></div>
+            <div class="input-wrap"><label>Aplicativo para alerta</label><select id="alertApp"><option value="whatsapp">WhatsApp</option><option value="telegram">Telegram</option></select></div>
+            <div class="input-wrap"><label>Contato 1</label><input type="text" id="contact1" value="5591999991111" /></div>
+            <div class="input-wrap"><label>Contato 2</label><input type="text" id="contact2" value="5591999992222" /></div>
+            <div class="input-wrap"><label>Mensagem</label><textarea id="curralMessage">Saí da área segura e estou em risco. Minha localização atual:</textarea></div>
+          </div>
+          <div class="btn-grid-3" style="margin-top:12px">
+            <button class="primary-btn" id="activateCurralBtn">Ativar manual</button>
+            <button class="secondary-btn" id="simulateExitBtn">Simular saída</button>
+            <button class="danger-btn" id="safeBtn">Estou seguro</button>
+          </div>
+          <div class="mini-note">No modo automático, o curral usa a posição atual e ajusta um raio discreto padrão. No manual, usa o raio escolhido.</div>
+        </div>
+      </section>
+
+      <section id="cameraPanel" class="screen-panel"><div class="card"><div class="section-head"><div><h3>Sistema de câmeras</h3><p>Leitura de placas, asfalto e ultrapassagem.</p></div><div class="signal good">Ativo</div></div><div class="form-grid"><div class="input-wrap"><label>Tipo de câmera</label><select id="cameraType"><option value="celular">Câmera do celular</option><option value="dashcam">Dashcam veicular</option><option value="ip">Câmera IP / Wi-Fi</option><option value="pro">Câmera profissional</option></select></div><div class="input-wrap"><label>Gravação</label><select id="recordMode"><option value="celular">Gravar no celular</option><option value="nuvem">Gravar na nuvem</option><option value="nao">Não gravar</option></select></div></div><div class="btn-grid-3" style="margin-top:12px"><button class="primary-btn" id="simulatePlateBtn">Simular placa</button><button class="secondary-btn" id="simulateAsphaltBtn">Simular asfalto</button><button class="danger-btn" id="simulateOvertakeBtn">Não ultrapasse</button></div></div></section>
+
+      <section id="tradutorPanel" class="screen-panel"><div class="card"><div class="section-head"><div><h3>Tradutor automático</h3><p>Conversa rápida entre motorista e passageiro.</p></div><div class="signal good">Ativo</div></div><div class="form-grid"><div class="input-wrap"><label>Idioma do motorista</label><select id="driverLang"><option value="pt-BR">Português</option><option value="en-US">English</option><option value="es-ES">Español</option></select></div><div class="input-wrap"><label>Idioma do passageiro</label><select id="passengerLang"><option value="en-US">English</option><option value="pt-BR">Português</option><option value="es-ES">Español</option></select></div></div><div class="message-box" id="translatorBox">Motorista: "Olá, tudo bem?"<br>Passageiro: "Hello, how are you?"</div><div class="btn-grid-2" style="margin-top:12px"><button class="primary-btn" id="translatorTestBtn">Testar tradução</button><button class="secondary-btn" id="translatorAutoBtn">Ativar conversa automática</button></div></div></section>
+
+      <section id="configPanel" class="screen-panel">
+        <div class="card">
+          <div class="section-head"><div><h3>Painel de configurações</h3><p>Funções principais ON/OFF.</p></div></div>
+          <div class="settings-group">
+            <div class="setting-row"><div><strong>Tempo de leitura dos cards</strong><small>Recolhimento automático em <b id="timerLabel" style="color:var(--neon-blue)">5s</b></small></div><input type="range" id="timerRange" class="time-slider" min="2" max="10" value="5"></div>
+            <div class="setting-row"><div><strong>Módulo Jarvis</strong><small>Mostrar ou ocultar</small></div><label class="switch"><input type="checkbox" id="swJarvis" checked><span class="slider-round"></span></label></div>
+            <div class="setting-row"><div><strong>Painel de Ganhos</strong><small>Mostrar ou ocultar</small></div><label class="switch"><input type="checkbox" id="swGanhos" checked><span class="slider-round"></span></label></div>
+            <div class="setting-row"><div><strong>Jarvis ativo</strong><small>Assistente principal</small></div><input class="toggle" type="checkbox" checked></div>
+            <div class="setting-row"><div><strong>Segurança automática</strong><small>Curral, SOS e monitoramento</small></div><input class="toggle" type="checkbox" checked></div>
+            <div class="setting-row"><div><strong>Câmera inteligente</strong><small>Placas e asfalto</small></div><input class="toggle" type="checkbox" checked></div>
+            <div class="setting-row"><div><strong>Tradutor automático</strong><small>Conversa entre idiomas</small></div><input class="toggle" type="checkbox" checked></div>
+            <div class="setting-row"><div><strong>Economia de bateria</strong><small>Ativa ao sair do app</small></div><input class="toggle" type="checkbox" checked></div>
+            <div class="setting-row"><div><strong>Função Camaleão</strong><small>Proteção discreta</small></div><input class="toggle" type="checkbox" checked></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="compartilharPanel" class="screen-panel"><div class="card"><div class="section-head"><div><h3>Compartilhar corrida</h3><p>Envie sua localização.</p></div></div><div class="message-box" id="sharePreview">Link de acompanhamento: https://motoristaseguro.app/evandro123</div><div class="btn-grid-2" style="margin-top:12px"><button class="primary-btn" id="shareWhatsappBtn">WhatsApp</button><button class="secondary-btn" id="shareTelegramBtn">Telegram</button></div></div></section>
+
+      <section id="indicaPanel" class="screen-panel"><div class="card"><div class="section-head"><div><h3>Motorista Indica</h3><p>Ganhe R$ 1,00 por indicado ativo.</p></div></div><div class="code-box" id="inviteCode">EVANDRO01</div><div class="info-grid"><div class="info-box"><strong id="indicaAtivos">12</strong><span>Ativos</span></div><div class="info-box"><strong id="indicaGanhos">R$ 12,00</strong><span>Ganhos</span></div><div class="info-box"><strong>R$ 1,00</strong><span>Por ativo</span></div><div class="info-box"><strong>VIP</strong><span>Nível</span></div></div><div class="btn-grid-2" style="margin-top:12px"><button class="primary-btn" id="copyCodeBtn">Copiar código</button><button class="secondary-btn" id="shareInviteBtn">Compartilhar convite</button></div></div></section>
+
+      <section id="vozPanel" class="screen-panel"><div class="card"><div class="section-head"><div><h3>Configuração do Jarvis</h3><p>Tom de voz e idioma aplicados de verdade.</p></div></div><div class="form-grid"><div class="input-wrap"><label>Idioma</label><select id="appLanguage"><option value="auto">Automático</option><option value="pt-BR">Português Brasil</option><option value="en-US">English US</option><option value="es-ES">Español</option></select></div><div class="input-wrap"><label>Tom principal</label><select id="jarvisVoiceType"><option value="normal">Normal</option><option value="serio">Sério</option><option value="objetivo">Objetivo</option><option value="analitico">Analítico</option><option value="leve">Leve</option></select></div></div><div class="btn-grid-2" style="margin-top:12px"><button class="primary-btn" id="testVoiceBtn">Testar voz</button><button class="secondary-btn" id="wakeJarvisBtn">Iniciar Jarvis</button></div></div></section>
+
+      <section id="musicaPanel" class="screen-panel"><div class="card"><div class="section-head"><div><h3>Jarvis Music Control</h3><p>Player simples e leve.</p></div></div><div class="message-box" style="margin-bottom:12px"><strong id="musicTitle">Nenhuma música tocando</strong><br><span id="musicStyle" style="color:#9db4cf">Playlist padrão</span></div><audio id="musicPlayer" preload="metadata"></audio><div class="input-wrap" style="margin-bottom:12px"><label>Selecionar músicas do celular</label><input type="file" id="audioFileInput" accept="audio/*" multiple /></div><div class="btn-grid-2"><button class="primary-btn" id="loadPhoneSongsBtn" type="button">Carregar músicas</button><button class="secondary-btn" id="clearPhoneSongsBtn" type="button">Limpar</button></div><div class="btn-grid-2" style="margin-top:12px"><button class="secondary-btn" onclick="tocarMusica()">▶️ Tocar</button><button class="secondary-btn" onclick="pausarMusica()">⏸️ Pausar</button><button class="secondary-btn" onclick="musicaAnterior()">⏮️ Anterior</button><button class="secondary-btn" onclick="proximaMusica()">⏭️ Próxima</button></div></div></section>
+
+      <section id="pagamentoPanel" class="screen-panel"><div class="card"><div class="section-head"><div><h3>Plano premium</h3><p>30 dias grátis antes da cobrança mensal.</p></div><div class="signal good" id="paymentStateBadge">Teste grátis</div></div><div class="payment-box"><div class="premium-badge">💎 Motorista Seguro Pro • R$ 9,90 / mês</div><div class="message-box" id="trialInfoText">Você está no período gratuito. Aproveite todas as funções.</div><div class="payment-qr"><img id="pixQrImage" alt="QR Code Pix" /></div><div class="code-box" id="pixKeyDisplay">d94ba125-2336-46f6-8922-659853e09a7b</div><div class="btn-grid-2"><button class="primary-btn" id="copyPixBtn">Copiar chave Pix</button><button class="secondary-btn" id="simulatePaymentBtn">Simular pagamento</button></div></div></div></section>
+
+      <section id="perfilPanel" class="screen-panel"><div class="card"><div class="section-head"><div><h3>Perfil do motorista</h3><p>Dados principais e preferências.</p></div></div><div class="form-grid"><div class="input-wrap"><label>Nome</label><input type="text" id="profileName" /></div><div class="input-wrap"><label>Cidade</label><input type="text" id="profileCity" /></div><div class="input-wrap"><label>E-mail</label><input type="text" id="profileEmail" /></div><div class="input-wrap"><label>Tempo do cartão na tela</label><select id="tempoCard"><option value="5000">5 segundos</option><option value="10000" selected>10 segundos</option><option value="15000">15 segundos</option><option value="30000">30 segundos</option><option value="0">Sempre visível</option></select></div><div class="input-wrap"><label>Valor mínimo da corrida (R$)</label><input type="number" id="minRideValue" value="12" min="0" step="0.5" /></div><button class="primary-btn" id="saveProfileBtn" type="button">Salvar perfil</button></div></div></section>
+    </main>
+
+    <div class="ride-card-overlay good-border" id="rideOverlay">
+      <div class="ride-top"><div class="metric"><span>R$/Km</span><strong id="priceKm">1.20</strong></div><div class="metric"><span>R$/Hora</span><strong id="priceHour">32.58</strong></div><div class="ride-info"><span id="rideAppName">Uber</span><span id="rideTopTime">0h17m • 6,8km</span></div></div>
+      <div class="ride-body"><h1 id="rideOverlayPrice">R$ 18,50</h1><div class="ride-rating" id="rideRating">⭐ 4.89</div><div class="route"><p id="rideOrigin">📍 Parque Guajará</p><p id="rideDestiny">📍 Rod. BR-316</p></div><div class="ride-details"><span id="ridePickupInfo">6 min (2.3 km)</span><span id="rideTripInfo">27 min (12.6 km)</span></div></div>
+      <div class="ride-analysis good" id="rideStatusOverlay">🟢 Corrida BOA</div>
+      <div class="jarvis-msg-card" id="jarvisTextOverlay">Jarvis: Boa corrida. Região com alta demanda.</div>
+      <div class="ride-actions"><button class="btn-accept" onclick="aceitarCorrida()">Aceitar</button><button class="btn-hide" onclick="fecharCartao()">Fechar</button><button class="btn-grow" onclick="toggleCardSize()">Tamanho</button><button class="btn-hide" onclick="minimizarCartao()">Minimizar</button></div>
+    </div>
+
+    <button class="fab-sos" id="sosBtn">SOS</button>
+
+    <div class="bottom-bar">
+      <div class="nav-item active" data-panel="inicioPanel"><div>🏠</div><div>Início</div></div>
+      <div class="nav-item" data-panel="mapaPanel"><div>🗺️</div><div>Mapa</div></div>
+      <div class="nav-item" data-panel="curralPanel"><div>🛡️</div><div>Curral</div></div>
+      <div class="nav-item" data-panel="cameraPanel"><div>📷</div><div>Câmera</div></div>
+      <div class="nav-item" data-panel="vozPanel"><div>🎙️</div><div>Jarvis</div></div>
+    </div>
+  </section>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const state = {
+      trialStart: null,
+      paymentActive: false,
+      user: { nome: "Motorista", cidade: "Belém", email: "motorista@exemplo.com" },
+      rideIndex: 0,
+      cardLarge: false,
+      currentLocale: "pt-BR",
+
+      curralRiskMode: false,
+      curralInside: true,
+      curralCenter: null,
+      curralRadiusMeters: 1000,
+      curralInterval: null,
+      curralCountdown: 300,
+      watchId: null,
+
+      routeLine: null,
+      musicasDoCelular: [],
+      playlistAtual: 0,
+      sugestoesVistas: JSON.parse(localStorage.getItem("jarvisSuggestionsSeen") || "{}"),
+      timer: parseInt(localStorage.getItem("user_timer")) || 5,
+      showGanhos: localStorage.getItem("prefGanhos") !== "false",
+      showJarvis: localStorage.getItem("prefJarvis") !== "false"
+    };
+
+    const TRIAL_DAYS = 30;
+    const PIX_KEY = "d94ba125-2336-46f6-8922-659853e09a7b";
+    const MONTHLY_PRICE = 9.90;
+
+    const screens = {
+      login: document.getElementById("loginScreen"),
+      welcome: document.getElementById("welcomeScreen"),
+      start: document.getElementById("startScreen"),
+      app: document.getElementById("appScreen")
+    };
+
+    function saveState() {
+      try {
+        const safeState = {
+          trialStart: state.trialStart,
+          paymentActive: state.paymentActive,
+          user: state.user,
+          rideIndex: state.rideIndex,
+          cardLarge: state.cardLarge,
+          currentLocale: state.currentLocale,
+          curralRiskMode: state.curralRiskMode,
+          curralInside: state.curralInside,
+          curralCenter: state.curralCenter,
+          curralRadiusMeters: state.curralRadiusMeters,
+          curralCountdown: state.curralCountdown,
+          playlistAtual: state.playlistAtual,
+          sugestoesVistas: state.sugestoesVistas,
+          timer: state.timer,
+          showGanhos: state.showGanhos,
+          showJarvis: state.showJarvis
+        };
+        localStorage.setItem("msp_state", JSON.stringify(safeState));
+        localStorage.setItem("jarvisSuggestionsSeen", JSON.stringify(state.sugestoesVistas));
+        localStorage.setItem("user_timer", state.timer);
+        localStorage.setItem("prefGanhos", state.showGanhos);
+        localStorage.setItem("prefJarvis", state.showJarvis);
+      } catch (e) {
+        console.error("Erro ao salvar dados localmente", e);
+      }
+    }
+
+    function loadState() {
+      const saved = JSON.parse(localStorage.getItem("msp_state") || "null");
+      if (saved) {
+        state.trialStart = saved.trialStart || new Date().toISOString();
+        state.paymentActive = !!saved.paymentActive;
+        state.user = saved.user || state.user;
+        state.rideIndex = saved.rideIndex || 0;
+        state.cardLarge = !!saved.cardLarge;
+        state.currentLocale = saved.currentLocale || detectLanguage();
+        state.curralRiskMode = !!saved.curralRiskMode;
+        state.curralInside = saved.curralInside !== undefined ? saved.curralInside : true;
+        state.curralCenter = saved.curralCenter || null;
+        state.curralRadiusMeters = saved.curralRadiusMeters || 1000;
+        state.curralCountdown = saved.curralCountdown || 300;
+        state.playlistAtual = saved.playlistAtual || 0;
+        state.sugestoesVistas = saved.sugestoesVistas || state.sugestoesVistas;
+        state.timer = saved.timer || state.timer;
+        state.showGanhos = saved.showGanhos !== undefined ? saved.showGanhos : state.showGanhos;
+        state.showJarvis = saved.showJarvis !== undefined ? saved.showJarvis : state.showJarvis;
+      } else {
+        state.trialStart = new Date().toISOString();
+      }
+      state.currentLocale = detectLanguage();
+      saveState();
+    }
+
+    function showBanner(text){
+      const el = document.getElementById("alertBanner");
+      el.textContent = text;
+      el.style.display = "block";
+      clearTimeout(showBanner._timer);
+      showBanner._timer = setTimeout(()=> el.style.display = "none", 3000);
+    }
+
+    function detectLanguage(){
+      const manual = document.getElementById("appLanguage")?.value || "auto";
+      if(manual !== "auto") return manual;
+      const lang = (navigator.language || "pt-BR").toLowerCase();
+      if(lang.startsWith("pt")) return "pt-BR";
+      if(lang.startsWith("es")) return "es-ES";
+      return "en-US";
+    }
+
+    function diffDays(dateString){ return Math.floor((Date.now() - new Date(dateString).getTime()) / 86400000); }
+    function getTrialDaysLeft(){ return Math.max(0, TRIAL_DAYS - diffDays(state.trialStart)); }
+
+    function updateTrialUI(){
+      const daysLeft = getTrialDaysLeft();
+      document.getElementById("trialStatus").textContent = state.paymentActive ? "OK" : daysLeft;
+      document.getElementById("trialDaysHero").textContent = `${daysLeft} dias`;
+      const badge = document.getElementById("paymentStateBadge");
+      const info = document.getElementById("trialInfoText");
+      if(state.paymentActive){
+        badge.textContent = "Premium ativo";
+        badge.className = "signal good";
+        info.textContent = "Pagamento confirmado. Seu acesso premium está liberado.";
+      } else if(daysLeft > 0){
+        badge.textContent = "Teste grátis";
+        badge.className = "signal good";
+        info.textContent = `Você está no período gratuito. Faltam ${daysLeft} dias para terminar.`;
+      } else {
+        badge.textContent = "Pagamento pendente";
+        badge.className = "signal danger";
+        info.textContent = "Seu período gratuito terminou. Faça o pagamento de R$ 9,90 via Pix para continuar.";
+      }
+    }
+
+    function updateUserUI(){
+      document.getElementById("sidebarName").textContent = state.user.nome;
+      document.getElementById("sidebarCity").textContent = `${state.user.cidade} • Motorista premium`;
+      document.getElementById("sidebarAvatar").textContent = state.user.nome.charAt(0).toUpperCase();
+      document.getElementById("profileName").value = state.user.nome;
+      document.getElementById("profileCity").value = state.user.cidade;
+      document.getElementById("profileEmail").value = state.user.email;
+      document.getElementById("pixKeyDisplay").textContent = PIX_KEY;
+      document.getElementById("swGanhos").checked = state.showGanhos;
+      document.getElementById("swJarvis").checked = state.showJarvis;
+      document.getElementById("timerRange").value = state.timer;
+      document.getElementById("timerLabel").innerText = state.timer + "s";
+      toggleModulo("ganhosModule", "prefGanhos", state.showGanhos, false);
+      toggleModulo("jarvisModule", "prefJarvis", state.showJarvis, false);
+    }
+
+    function switchAuthTab(type){
+      const isLogin = type === "login";
+
+      document.getElementById("tabLogin").classList.toggle("btn-primary", isLogin);
+      document.getElementById("tabLogin").classList.toggle("btn-outline", !isLogin);
+
+      document.getElementById("tabCadastro").classList.toggle("btn-primary", !isLogin);
+      document.getElementById("tabCadastro").classList.toggle("btn-outline", isLogin);
+
+      document.getElementById("formLogin").classList.toggle("hidden", !isLogin);
+      document.getElementById("formCadastro").classList.toggle("hidden", isLogin);
+    }
+
+    document.getElementById("tabLogin").onclick = ()=> switchAuthTab("login");
+    document.getElementById("tabCadastro").onclick = ()=> switchAuthTab("cadastro");
+
+    function entrarDireto(){
+      const acesso = document.getElementById("loginRapido").value.trim();
+      if(!acesso) return showBanner("⚠️ Digite seu Gmail ou telefone.");
+      state.user.email = acesso.includes("@") ? acesso : `${acesso}@motorista.app`;
+      state.user.nome = "Motorista";
+      saveState();
+      screens.login.classList.add("hidden");
+      screens.welcome.classList.remove("hidden");
+      updateUserUI();
+      updateTrialUI();
+      showBanner("✅ Login realizado com sucesso.");
+    }
+
+    function entrarGoogle(){
+      state.user = { nome:"Motorista Google", cidade:"Sua cidade", email:"google@motorista.com" };
+      saveState();
+      screens.login.classList.add("hidden");
+      screens.welcome.classList.remove("hidden");
+      updateUserUI();
+      updateTrialUI();
+      showBanner("✅ Entrada com Google realizada.");
+    }
+
+    function entrarFacebook(){
+      state.user = { nome:"Motorista Facebook", cidade:"Sua cidade", email:"facebook@motorista.com" };
+      saveState();
+      screens.login.classList.add("hidden");
+      screens.welcome.classList.remove("hidden");
+      updateUserUI();
+      updateTrialUI();
+      showBanner("✅ Entrada com Facebook realizada.");
+    }
+
+    function cadastrarDireto(){
+      const nome = document.getElementById("cadNome").value.trim() || "Motorista";
+      const contato = document.getElementById("cadContato").value.trim();
+      const cidade = document.getElementById("cadCidade").value.trim() || "Sua cidade";
+      if(!contato) return showBanner("⚠️ Digite seu Gmail ou telefone.");
+      state.user = { nome, cidade, email: contato.includes("@") ? contato : `${contato}@motorista.app` };
+      state.trialStart = new Date().toISOString();
+      state.paymentActive = false;
+      saveState();
+      updateUserUI();
+      updateTrialUI();
+      screens.login.classList.add("hidden");
+      screens.welcome.classList.remove("hidden");
+      showBanner("✅ Conta criada com sucesso.");
+    }
+
+    document.getElementById("logoutWelcomeBtn").onclick = ()=>{ screens.welcome.classList.add("hidden"); screens.login.classList.remove("hidden"); };
+    document.getElementById("openStartScreenBtn").onclick = ()=>{ screens.welcome.classList.add("hidden"); screens.start.classList.remove("hidden"); iniciarJarvis(); updateStartStatus(); };
+    document.getElementById("goToAppBtn").onclick = ()=>{
+      screens.start.classList.add("hidden");
+      screens.app.classList.remove("hidden");
+      updateUserUI();
+      updateTrialUI();
+      setTimeout(()=> map.invalidateSize(), 120);
+      suggestFeatureOnce();
+      aplicarRecolhimento();
+      falarJarvis("Modo de trabalho iniciado.");
+    };
+    document.getElementById("startEmergencyBtn").onclick = ()=>{ responderPerigo(); showBanner("🚨 Emergência ativada."); startRecordingByEvent("sos"); };
+
+    function updateStartStatus(){
+      document.getElementById("startJarvisStatus").textContent = "Jarvis: Sistema ativo";
+      document.getElementById("startSubText").textContent = state.currentLocale === "en-US" ? "AI assistant for car and motorcycle" : state.currentLocale === "es-ES" ? "Asistente IA para auto y moto" : "Assistente IA para carro e moto";
+      if(navigator.getBattery){
+        navigator.getBattery().then(b=>{
+          const update = ()=> document.getElementById("startBatteryInfo").textContent = `Bateria ${Math.round(b.level * 100)}%`;
+          update();
+          b.addEventListener("levelchange", update);
+        });
+      }
+    }
+
+    function getVoiceSettings(){
+      const voiceType = document.getElementById("jarvisVoiceType")?.value || "normal";
+      switch(voiceType){
+        case "serio": return { rate:.94, pitch:.76 };
+        case "objetivo": return { rate:1.08, pitch:.90 };
+        case "analitico": return { rate:1.00, pitch:.84 };
+        case "leve": return { rate:1.04, pitch:1.12 };
+        default: return { rate:1, pitch:1 };
+      }
+    }
+
+    function falarJarvis(text){
+      if(!("speechSynthesis" in window)) return;
+      state.currentLocale = detectLanguage();
+      const cfg = getVoiceSettings();
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = state.currentLocale;
+      u.rate = cfg.rate;
+      u.pitch = cfg.pitch;
+      speechSynthesis.speak(u);
+    }
+
+    function iniciarJarvis(){
+      const splash = document.getElementById("jarvisSplash");
+      const status = document.getElementById("jarvisStatus");
+      splash.classList.remove("hidden");
+      falarJarvis("Sistema iniciado. Vamos ao trabalho.");
+      status.textContent = "Carregando módulos...";
+      setTimeout(()=> status.textContent = "Ativando segurança...", 1200);
+      setTimeout(()=> status.textContent = "Abrindo painel do motorista...", 2400);
+      setTimeout(()=> splash.classList.add("hidden"), 3600);
+    }
+
+    document.getElementById("testVoiceBtn").onclick = ()=> falarJarvis("Sistema de voz do Jarvis pronto para uso.");
+    document.getElementById("wakeJarvisBtn").onclick = iniciarJarvis;
+
+    function openSidebar(){ document.getElementById("sidebar").classList.add("open"); document.getElementById("sidebarOverlay").classList.add("show"); }
+    function closeSidebar(){ document.getElementById("sidebar").classList.remove("open"); document.getElementById("sidebarOverlay").classList.remove("show"); }
+    document.getElementById("openSidebarBtn").onclick = openSidebar;
+    document.getElementById("closeSidebarBtn").onclick = closeSidebar;
+    document.getElementById("sidebarOverlay").onclick = closeSidebar;
+
+    function activatePanel(panelId){
+      document.querySelectorAll(".screen-panel").forEach(el=> el.classList.remove("active"));
+      document.getElementById(panelId).classList.add("active");
+      document.querySelectorAll(".menu-btn[data-panel]").forEach(btn=> btn.classList.toggle("active", btn.dataset.panel === panelId));
+      document.querySelectorAll(".nav-item").forEach(btn=> btn.classList.toggle("active", btn.dataset.panel === panelId));
+      if(panelId === "mapaPanel") setTimeout(()=> map.invalidateSize(), 120);
+      closeSidebar();
+    }
+    document.querySelectorAll(".menu-btn[data-panel]").forEach(btn=> btn.onclick = ()=> activatePanel(btn.dataset.panel));
+    document.querySelectorAll(".nav-item").forEach(btn=> btn.onclick = ()=> activatePanel(btn.dataset.panel));
+    document.getElementById("logoutBtn").onclick = ()=>{
+      screens.app.classList.add("hidden");
+      screens.start.classList.add("hidden");
+      screens.welcome.classList.add("hidden");
+      screens.login.classList.remove("hidden");
+      closeSidebar();
+      showBanner("🚪 Você saiu do aplicativo.");
+    };
+
+    document.getElementById("saveProfileBtn").onclick = ()=>{
+      state.user.nome = document.getElementById("profileName").value.trim() || state.user.nome;
+      state.user.cidade = document.getElementById("profileCity").value.trim() || state.user.cidade;
+      state.user.email = document.getElementById("profileEmail").value.trim() || state.user.email;
+      localStorage.setItem("tempoCard", document.getElementById("tempoCard").value);
+      localStorage.setItem("minRideValue", document.getElementById("minRideValue").value);
+      updateUserUI();
+      saveState();
+      showBanner("✅ Perfil salvo com sucesso.");
+    };
+    document.getElementById("topNotifBtn").onclick = ()=> showBanner("🔔 Notificações: 2 alertas e 1 corrida boa detectada.");
+
+    const map = L.map("map", { zoomControl:true, preferCanvas:true }).setView([-1.4558, -48.4902], 13);
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", { maxZoom:19, attribution:"&copy; OpenStreetMap & Carto" }).addTo(map);
+
+    function divIcon(html, size=[28,28], anchor=[14,14]){
+      return L.divIcon({ className:"", html, iconSize:size, iconAnchor:anchor });
+    }
+
+    const centerLat = -1.4558, centerLng = -48.4902;
+
+    const userMarker = L.marker([centerLat, centerLng], {
+      icon: divIcon(`<div style="width:22px;height:22px;border-radius:50%;background:#2aa7ff;border:3px solid #fff;box-shadow:0 0 0 8px rgba(42,167,255,.18);"></div>`, [22,22], [11,11])
+    }).addTo(map);
+
+    [
+      { name:"Centro", lat:-1.4550, lng:-48.5030, radius:650, color:"#35d07f", fill:.22, msg:"Boa demanda e menos concorrência" },
+      { name:"Batista Campos", lat:-1.4605, lng:-48.4840, radius:700, color:"#ffd166", fill:.20, msg:"Fluxo moderado" },
+      { name:"Marco", lat:-1.4385, lng:-48.4700, radius:900, color:"#ff4d6d", fill:.22, msg:"Muitos motoristas ativos" },
+      { name:"Área de risco", lat:-1.4710, lng:-48.5000, radius:520, color:"#ff4d6d", fill:.28, msg:"Área com atenção reforçada" }
+    ].forEach(r=> L.circle([r.lat,r.lng], { color:r.color, fillColor:r.color, fillOpacity:r.fill, radius:r.radius, weight:2 }).addTo(map).bindPopup(`<b>${r.name}</b><br>${r.msg}`));
+
+    [
+      { name:"Posto Econômico", lat:-1.4485, lng:-48.4960, price:"R$ 5,97" },
+      { name:"Posto Central", lat:-1.4620, lng:-48.4872, price:"R$ 6,09" }
+    ].forEach(p=> L.marker([p.lat,p.lng], {
+      icon: divIcon(`<div style="width:28px;height:28px;border-radius:50%;background:#ffd166;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:14px">⛽</div>`)
+    }).addTo(map).bindPopup(`<b>${p.name}</b><br>Gasolina: ${p.price}<br><button onclick="tracarRotaPosto(${p.lat},${p.lng})" style="margin-top:8px;border:none;border-radius:8px;padding:8px 10px;background:#2aa7ff;color:#fff;cursor:pointer">Traçar rota</button>`));
+
+    const drivers = Array.from({length:18}).map((_,i)=>{
+      const lat = centerLat + (Math.random() - 0.5) * 0.06;
+      const lng = centerLng + (Math.random() - 0.5) * 0.06;
+      const colors = ["#35d07f","#2aa7ff","#ffd166","#00e1ff","#ff4d6d"];
+      const marker = L.marker([lat,lng], {
+        icon: divIcon(`<div style="width:26px;height:26px;border-radius:50%;background:${colors[i % colors.length]};border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:14px">🚗</div>`, [26,26], [13,13])
+      }).addTo(map);
+      return { marker, lat, lng, speedLat:(Math.random() - 0.5) * 0.0012, speedLng:(Math.random() - 0.5) * 0.0012 };
+    });
+
+    function moveDrivers(){
+      drivers.forEach(d=>{
+        d.lat += d.speedLat;
+        d.lng += d.speedLng;
+        if(d.lat > centerLat + 0.04 || d.lat < centerLat - 0.04) d.speedLat *= -1;
+        if(d.lng > centerLng + 0.04 || d.lng < centerLng - 0.04) d.speedLng *= -1;
+        d.marker.setLatLng([d.lat,d.lng]);
+      });
+      document.getElementById("driversCount").textContent = drivers.length;
+      document.getElementById("heroDrivers").textContent = drivers.length;
+    }
+    setInterval(moveDrivers, 1800);
+
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371000;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+
+    window.tracarRotaPosto = function(lat,lng){
+      if(state.routeLine) map.removeLayer(state.routeLine);
+      state.routeLine = L.polyline([[userMarker.getLatLng().lat, userMarker.getLatLng().lng],[lat,lng]], { color:"#2aa7ff", weight:5, opacity:.9 }).addTo(map);
+      map.fitBounds(state.routeLine.getBounds(), { padding:[30,30] });
+      showBanner("🧭 Rota traçada até o posto escolhido.");
+    };
+
+    document.getElementById("btnClearRoute").onclick = ()=>{
+      if(state.routeLine){
+        map.removeLayer(state.routeLine);
+        state.routeLine = null;
+        showBanner("🧭 Rota removida.");
+      }
+    };
+
+    document.getElementById("btnCenter").onclick = ()=>{
+      const latlng = userMarker.getLatLng();
+      map.setView([latlng.lat, latlng.lng], 15);
+      showBanner("📍 Mapa centralizado.");
+    };
+
+    document.getElementById("btnDanger").onclick = ()=>{
+      document.getElementById("dangerZoneText").textContent = "Área de atenção detectada ao sul do mapa";
+      document.getElementById("dangerZoneStatus").textContent = "Alerta";
+      document.getElementById("dangerZoneStatus").className = "signal danger";
+      document.getElementById("jarvisMessage").textContent = "Jarvis: área de risco próxima.";
+      document.getElementById("jarvisText").textContent = "Área de risco próxima detectada.";
+      map.setView([-1.4710, -48.5000], 14);
+      showBanner("⚠️ Área de risco destacada no mapa.");
+    };
+
+    const rideSamples = [
+      { app:"Uber", price:18.50, km:6.8, min:17, rating:"4.89", scoreClass:"good", origin:"📍 Parque Guajará", destiny:"📍 Rod. BR-316", pickup:"6 min (2.3 km)", trip:"27 min (12.6 km)" },
+      { app:"99", price:12.20, km:6.4, min:20, rating:"4.76", scoreClass:"warn", origin:"📍 Cidade Nova", destiny:"📍 Umarizal", pickup:"5 min (1.7 km)", trip:"20 min (8.1 km)" },
+      { app:"Uber", price:9.40, km:7.1, min:24, rating:"4.55", scoreClass:"danger", origin:"📍 Tapanã", destiny:"📍 Icoaraci", pickup:"8 min (3.0 km)", trip:"24 min (10.2 km)" }
+    ];
+
+    function renderRide(sample){
+      const lucroKm = sample.price / sample.km;
+      const lucroHora = sample.price / (sample.min / 60);
+      const minRide = parseFloat(localStorage.getItem("minRideValue") || "12");
+      let scoreClass = sample.scoreClass, scoreText = "🟢 BOA", msg = "Corrida recomendada. Boa relação entre valor, distância e área de destino.";
+
+      if(sample.price < minRide){
+        scoreClass = "danger";
+        scoreText = "🔴 RUIM";
+        msg = "Corrida abaixo do valor mínimo configurado.";
+      } else if(scoreClass === "warn"){
+        scoreText = "🟡 AVALIAR";
+        msg = "Corrida razoável. Vale avaliar antes de aceitar.";
+      } else if(scoreClass === "danger"){
+        scoreText = "🔴 RUIM";
+        msg = "Corrida fraca. Baixo retorno.";
+      }
+
+      document.getElementById("rideScore").textContent = scoreText;
+      document.getElementById("rideScore").className = `signal ${scoreClass}`;
+      document.getElementById("ridePrice").textContent = `R$ ${sample.price.toFixed(2).replace(".", ",")}`;
+      document.getElementById("rideKm").textContent = `${sample.km.toFixed(1).replace(".", ",")} km`;
+      document.getElementById("rideMin").textContent = `${sample.min} min`;
+      document.getElementById("rideProfit").textContent = `R$ ${lucroKm.toFixed(2).replace(".", ",")}/km`;
+      document.getElementById("rideMessage").textContent = msg;
+
+      document.getElementById("priceKm").textContent = lucroKm.toFixed(2).replace(".", ",");
+      document.getElementById("priceHour").textContent = lucroHora.toFixed(2).replace(".", ",");
+      document.getElementById("rideAppName").textContent = sample.app;
+      document.getElementById("rideTopTime").textContent = `0h${String(sample.min).padStart(2,"0")}m • ${sample.km.toFixed(1).replace(".", ",")}km`;
+      document.getElementById("rideOverlayPrice").textContent = `R$ ${sample.price.toFixed(2).replace(".", ",")}`;
+      document.getElementById("rideRating").textContent = `⭐ ${sample.rating}`;
+      document.getElementById("rideOrigin").textContent = sample.origin;
+      document.getElementById("rideDestiny").textContent = sample.destiny;
+      document.getElementById("ridePickupInfo").textContent = sample.pickup;
+      document.getElementById("rideTripInfo").textContent = sample.trip;
+      document.getElementById("rideStatusOverlay").textContent = scoreText;
+      document.getElementById("rideStatusOverlay").className = `ride-analysis ${scoreClass === "good" ? "good" : scoreClass === "warn" ? "warn" : "danger"}`;
+      document.getElementById("jarvisTextOverlay").textContent = "Jarvis: " + msg;
+      document.getElementById("jarvisMessage").textContent = "Jarvis: " + msg;
+      document.getElementById("jarvisText").textContent = msg;
+
+      const overlay = document.getElementById("rideOverlay");
+      overlay.classList.remove("good-border","warn-border","bad-border");
+      overlay.classList.add(scoreClass === "good" ? "good-border" : scoreClass === "warn" ? "warn-border" : "bad-border");
+    }
+
+    function nextRide(){ state.rideIndex = (state.rideIndex + 1) % rideSamples.length; renderRide(rideSamples[state.rideIndex]); saveState(); }
+    function showRideCard(){
+      const card = document.getElementById("rideOverlay");
+      card.style.display = "block";
+      card.style.maxHeight = "66vh";
+      card.style.width = state.cardLarge ? "min(520px, calc(100vw - 24px))" : "min(360px, calc(100vw - 24px))";
+      card.scrollTop = 0;
+      const tempo = parseInt(localStorage.getItem("tempoCard") || document.getElementById("tempoCard").value || "10000", 10);
+      clearTimeout(showRideCard._timer);
+      if(tempo !== 0){
+        showRideCard._timer = setTimeout(()=> card.style.display = "none", tempo);
+      }
+    }
+    function fecharCartao(){ document.getElementById("rideOverlay").style.display = "none"; }
+    function aceitarCorrida(){ showBanner("✅ Corrida aceita."); fecharCartao(); falarJarvis("Corrida aceita com sucesso."); }
+    function toggleCardSize(){ state.cardLarge = !state.cardLarge; saveState(); showRideCard(); }
+    function minimizarCartao(){
+      const card = document.getElementById("rideOverlay");
+      card.style.maxHeight = "84px";
+      clearTimeout(minimizarCartao._timer);
+      minimizarCartao._timer = setTimeout(()=> { card.style.maxHeight = "66vh"; }, 1600);
+    }
+    document.getElementById("btnRide").onclick = ()=>{ nextRide(); aplicarRecolhimento(); };
+    document.getElementById("btnMapRide").onclick = ()=>{ nextRide(); aplicarRecolhimento(); };
+    document.getElementById("showOverlayBtn").onclick = ()=> showRideCard();
+
+    function formatCountdown(sec){
+      const m = String(Math.floor(sec / 60)).padStart(2,"0");
+      const s = String(sec % 60).padStart(2,"0");
+      return `${m}:${s}`;
+    }
+
+    function updateCurralUI(){
+      const mode = document.getElementById("curralMode").value;
+      document.getElementById("curralState").textContent = mode === "automatico" ? "AUTO" : "MANUAL";
+      document.getElementById("curralInside").textContent = state.curralInside ? "Dentro" : "Fora";
+      document.getElementById("curralDrivers").textContent = state.curralInside ? "8" : "--";
+      document.getElementById("curralStatusBadge").textContent = state.curralRiskMode ? "🔴 Em risco" : (mode === "automatico" ? "🟢 Automático" : "🟢 Manual");
+      document.getElementById("riskLevel").textContent = state.curralRiskMode ? "Alerta" : "Baixo";
+      document.getElementById("nextSend").textContent = state.curralRiskMode ? formatCountdown(state.curralCountdown) : "--:--";
+    }
+
+    function iniciarRastreamentoGPS() {
+      if (!navigator.geolocation) {
+        showBanner("❌ GPS não suportado pelo aparelho.");
+        return;
+      }
+
+      if (state.watchId !== null) {
+        navigator.geolocation.clearWatch(state.watchId);
+      }
+
+      state.watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+
+          userMarker.setLatLng([lat, lng]);
+
+          if (state.curralCenter) {
+            evaluateCurralByPosition(lat, lng);
+          }
+        },
+        (err) => {
+          console.error("Erro GPS:", err);
+          showBanner("⚠️ Ative o GPS para o Curral funcionar.");
+        },
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+      );
+    }
+
+    function evaluateCurralByPosition(lat, lng) {
+      if (!state.curralCenter || state.curralRiskMode) return;
+
+      const dist = calculateDistance(
+        state.curralCenter.lat, state.curralCenter.lng,
+        lat, lng
+      );
+
+      state.curralInside = dist <= state.curralRadiusMeters;
+      updateCurralUI();
+      saveState();
+
+      if (!state.curralInside && !state.curralRiskMode) {
+        startCurralAlertLoop();
+      }
+    }
+
+    function abrirAppAlerta() {
+      const latlng = userMarker.getLatLng();
+      const msgBase = document.getElementById("curralMessage").value.trim();
+      const googleMapsUrl = `https://www.google.com/maps?q=${latlng.lat},${latlng.lng}`;
+      const textoFinal = `${msgBase}\n📍 Localização: ${googleMapsUrl}`;
+
+      const app = document.getElementById("alertApp").value;
+      const url = app === "whatsapp"
+        ? `https://wa.me/?text=${encodeURIComponent(textoFinal)}`
+        : `https://t.me/share/url?url=${encodeURIComponent(googleMapsUrl)}&text=${encodeURIComponent(msgBase)}`;
+
+      window.open(url, "_blank");
+    }
+
+    function stopCurralAlertLoop(){
+      clearInterval(state.curralInterval);
+      state.curralInterval = null;
+      state.curralCountdown = 300;
+      document.getElementById("nextSend").textContent = "--:--";
+      saveState();
+    }
+
+    function startCurralAlertLoop() {
+      if (state.curralRiskMode) return;
+
+      state.curralRiskMode = true;
+      state.curralCountdown = 300;
+      updateCurralUI();
+      saveState();
+
+      falarJarvis("Alerta! Você saiu da área segura. Iniciando protocolos.");
+      showBanner("🚨 FORA DA ÁREA SEGURA!");
+      abrirAppAlerta();
+
+      clearInterval(state.curralInterval);
+      state.curralInterval = setInterval(() => {
+        state.curralCountdown--;
+        if (state.curralCountdown <= 0) {
+          state.curralCountdown = 300;
+          abrirAppAlerta();
+          showBanner("📍 Alerta reenviado com localização atual.");
+        }
+        document.getElementById("nextSend").textContent = formatCountdown(state.curralCountdown);
+      }, 1000);
+    }
+
+    function applyCurralSettings(){
+      const mode = document.getElementById("curralMode").value;
+      state.curralRadiusMeters = mode === "automatico" ? 3000 : parseInt(document.getElementById("curralRadius").value, 10) * 1000;
+      saveState();
+    }
+
+    function activateCurral() {
+      if (!navigator.geolocation) {
+        showBanner("❌ GPS não suportado pelo aparelho.");
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition((pos) => {
+        state.curralCenter = {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude
+        };
+
+        const mode = document.getElementById("curralMode").value;
+        const radiusSelect = document.getElementById("curralRadius");
+        state.curralRadiusMeters = mode === "automatico" ? 3000 : parseInt(radiusSelect.value, 10) * 1000;
+
+        state.curralInside = true;
+        state.curralRiskMode = false;
+        stopCurralAlertLoop();
+        updateCurralUI();
+        saveState();
+
+        const label = mode === "automatico" ? "3km automáticos" : `${radiusSelect.value}km`;
+        showBanner(`🛡️ Curral ativo: ${label} ao seu redor.`);
+        falarJarvis("Área segura definida. Monitorando perímetro.");
+
+        if (window.curralCircle) map.removeLayer(window.curralCircle);
+        window.curralCircle = L.circle([state.curralCenter.lat, state.curralCenter.lng], {
+          color: "#2aa7ff",
+          fillColor: "#2aa7ff",
+          fillOpacity: 0.1,
+          radius: state.curralRadiusMeters
+        }).addTo(map);
+
+        map.setView([state.curralCenter.lat, state.curralCenter.lng], 15);
+      }, () => {
+        showBanner("❌ Erro ao obter GPS para ativar Curral.");
+      }, { enableHighAccuracy: true, timeout: 15000 });
+    }
+
+    function simulateExitCurral(){
+      if(!state.curralCenter){
+        showBanner("⚠️ Ative o curral primeiro.");
+        return;
+      }
+
+      const delta = (state.curralRadiusMeters / 111111) + 0.005;
+      const fakeLat = state.curralCenter.lat + delta;
+      const fakeLng = state.curralCenter.lng + delta;
+
+      userMarker.setLatLng([fakeLat, fakeLng]);
+      map.setView([fakeLat, fakeLng], 15);
+
+      evaluateCurralByPosition(fakeLat, fakeLng);
+      showBanner("⚠️ Saída simulada do curral.");
+    }
+
+    function markSafe() {
+      state.curralRiskMode = false;
+      state.curralInside = true;
+      stopCurralAlertLoop();
+
+      if(window.curralCircle) {
+        map.removeLayer(window.curralCircle);
+        window.curralCircle = null;
+      }
+
+      state.curralCenter = null;
+      updateCurralUI();
+      saveState();
+      showBanner("✅ Status: Seguro.");
+      falarJarvis("Segurança confirmada. Alertas desativados.");
+    }
+
+    document.getElementById("activateCurralBtn").onclick = activateCurral;
+    document.getElementById("simulateExitBtn").onclick = simulateExitCurral;
+    document.getElementById("safeBtn").onclick = markSafe;
+    document.getElementById("curralMode").onchange = ()=>{ applyCurralSettings(); updateCurralUI(); };
+    document.getElementById("curralRadius").onchange = applyCurralSettings;
+
+    function responderPerigo(){ falarJarvis("Modo de emergência ativado."); }
+    function startRecordingByEvent(eventType){
+      const mode = document.getElementById("recordMode")?.value || "celular";
+      if(mode === "nao") return;
+      showBanner(mode === "celular" ? `🎥 Evento "${eventType}" gravado no celular.` : `☁️ Evento "${eventType}" salvo na nuvem.`);
+    }
+
+    document.getElementById("simulatePlateBtn").onclick = ()=>{ showBanner("Atenção. Lombada à frente. Reduza a velocidade."); falarJarvis("Atenção. Lombada à frente. Reduza a velocidade."); startRecordingByEvent("placa"); };
+    document.getElementById("simulateAsphaltBtn").onclick = ()=>{ showBanner("Sinalização de pare no asfalto detectada."); falarJarvis("Sinalização de pare no asfalto detectada."); startRecordingByEvent("asfalto"); };
+    document.getElementById("simulateOvertakeBtn").onclick = ()=>{ showBanner("Motorista, linha contínua detectada. Não ultrapasse."); falarJarvis("Motorista, linha contínua detectada. Não ultrapasse."); startRecordingByEvent("ultrapassagem"); };
+
+    document.getElementById("shareWhatsappBtn").onclick = ()=>{
+      window.open(`https://wa.me/?text=${encodeURIComponent("Estou compartilhando minha corrida pelo Motorista Seguro Pro. Acompanhe minha localização: https://motoristaseguro.app/evandro123")}`, "_blank");
+      showBanner("✅ Compartilhamento preparado.");
+    };
+    document.getElementById("shareTelegramBtn").onclick = ()=>{
+      window.open(`https://t.me/share/url?url=${encodeURIComponent("https://motoristaseguro.app/evandro123")}&text=${encodeURIComponent("Acompanhe minha corrida pelo Motorista Seguro Pro.")}`, "_blank");
+      showBanner("✅ Compartilhamento preparado.");
+    };
+    document.getElementById("copyCodeBtn").onclick = async ()=>{
+      try{ await navigator.clipboard.writeText(document.getElementById("inviteCode").textContent); }catch(e){}
+      showBanner("📋 Código copiado.");
+    };
+    document.getElementById("shareInviteBtn").onclick = ()=>{
+      window.open(`https://wa.me/?text=${encodeURIComponent("Baixe o Motorista Seguro Pro e use meu código EVANDRO01.")}`, "_blank");
+      showBanner("✅ Convite compartilhado.");
+    };
+    document.getElementById("translatorTestBtn").onclick = ()=>{
+      document.getElementById("translatorBox").innerHTML = `Motorista: "Vou por outra rota porque tem trânsito." <br>Passageiro: "I will take another route. There is traffic ahead."`;
+      falarJarvis("Modo tradutor ativado.");
+    };
+    document.getElementById("translatorAutoBtn").onclick = ()=>{
+      document.getElementById("translatorBox").textContent = "Modo conversa automática ativado. O sistema escuta e traduz continuamente.";
+      falarJarvis("Modo conversa automática ativado.");
+    };
+
+    function getPlaylistAtual(){ return state.musicasDoCelular; }
+    function atualizarPlayerUI(){
+      const lista = getPlaylistAtual();
+      if(!lista.length){
+        document.getElementById("musicTitle").textContent = "Nenhuma música tocando";
+        document.getElementById("musicStyle").textContent = "Playlist vazia";
+        return;
+      }
+      const track = lista[state.playlistAtual] || lista[0];
+      document.getElementById("musicTitle").textContent = track.titulo;
+      document.getElementById("musicStyle").textContent = track.estilo;
+    }
+
+    function carregarMusicasDoCelular(){
+      const files = Array.from(document.getElementById("audioFileInput").files || []);
+      if(!files.length) return showBanner("⚠️ Selecione uma ou mais músicas do celular.");
+      state.musicasDoCelular.forEach(m=> m.objectUrl && URL.revokeObjectURL(m.objectUrl));
+      state.musicasDoCelular = files.map(file=>{
+        const url = URL.createObjectURL(file);
+        return { titulo:file.name.replace(/\.[^/.]+$/, ""), estilo:"Música do celular", src:url, objectUrl:url };
+      });
+      state.playlistAtual = 0;
+      atualizarPlayerUI();
+      showBanner("🎵 Músicas carregadas com sucesso.");
+    }
+
+    function limparMusicasDoCelular(){
+      state.musicasDoCelular.forEach(m=> m.objectUrl && URL.revokeObjectURL(m.objectUrl));
+      state.musicasDoCelular = [];
+      state.playlistAtual = 0;
+      atualizarPlayerUI();
+      showBanner("🧹 Playlist removida.");
+    }
+
+    function tocarMusica(){
+      const lista = getPlaylistAtual();
+      const player = document.getElementById("musicPlayer");
+      if(!lista.length) return showBanner("⚠️ Nenhuma música disponível.");
+      const musica = lista[state.playlistAtual];
+      atualizarPlayerUI();
+      player.src = musica.src;
+      player.play().catch(()=> showBanner("▶️ Toque na tela para permitir áudio."));
+    }
+
+    function pausarMusica(){ document.getElementById("musicPlayer").pause(); showBanner("⏸️ Música pausada."); }
+    function proximaMusica(){
+      const lista = getPlaylistAtual();
+      if(!lista.length) return showBanner("⚠️ Nenhuma música carregada.");
+      state.playlistAtual = (state.playlistAtual + 1) % lista.length;
+      tocarMusica();
+    }
+    function musicaAnterior(){
+      const lista = getPlaylistAtual();
+      if(!lista.length) return showBanner("⚠️ Nenhuma música carregada.");
+      state.playlistAtual = (state.playlistAtual - 1 + lista.length) % lista.length;
+      tocarMusica();
+    }
+
+    document.getElementById("loadPhoneSongsBtn").onclick = carregarMusicasDoCelular;
+    document.getElementById("clearPhoneSongsBtn").onclick = limparMusicasDoCelular;
+    document.getElementById("musicPlayer").addEventListener("ended", proximaMusica);
+
+    function buildPixQr(){
+      const payload = encodeURIComponent(`PIX ${PIX_KEY} - Motorista Seguro Pro - R$ ${MONTHLY_PRICE.toFixed(2)}`);
+      document.getElementById("pixQrImage").src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${payload}`;
+      document.getElementById("pixKeyDisplay").textContent = PIX_KEY;
+    }
+
+    document.getElementById("copyPixBtn").onclick = async ()=>{
+      try{ await navigator.clipboard.writeText(PIX_KEY); }catch(e){}
+      showBanner("📋 Chave Pix copiada.");
+    };
+    document.getElementById("simulatePaymentBtn").onclick = ()=>{
+      state.paymentActive = true;
+      saveState();
+      updateTrialUI();
+      showBanner("✅ Pagamento confirmado automaticamente.");
+      falarJarvis("Pagamento confirmado com sucesso.");
+    };
+    document.getElementById("sosBtn").onclick = ()=>{
+      document.getElementById("jarvisMessage").textContent = "Jarvis: SOS ativado.";
+      document.getElementById("jarvisText").textContent = "SOS ativado.";
+      showBanner("🚨 SOS ativado.");
+      responderPerigo();
+      startRecordingByEvent("sos");
+    };
+
+    function suggestFeatureOnce(){
+      const features = [
+        { key:"curral", msg:"Motorista, já testou o curral invisível?" },
+        { key:"camera", msg:"Motorista, já testou a câmera com leitura de placas?" },
+        { key:"tradutor", msg:"Motorista, já testou o tradutor automático?" }
+      ];
+      for(const item of features){
+        if(!state.sugestoesVistas[item.key]){
+          state.sugestoesVistas[item.key] = true;
+          localStorage.setItem("jarvisSuggestionsSeen", JSON.stringify(state.sugestoesVistas));
+          document.getElementById("jarvisSuggestionStatus").textContent = item.msg;
+          setTimeout(()=> falarJarvis(item.msg), 900);
+          return;
+        }
+      }
+      document.getElementById("jarvisSuggestionStatus").textContent = "Jarvis: recursos principais já apresentados.";
+    }
+
+    function ajustarTimer(v){
+      state.timer = parseInt(v,10);
+      document.getElementById("timerLabel").innerText = state.timer + "s";
+      saveState();
+      aplicarRecolhimento();
+    }
+
+    function toggleModulo(id, key, status, persist = true){
+      const el = document.getElementById(id);
+      el.classList.toggle("hidden", !status);
+      if(id === "ganhosModule") state.showGanhos = status;
+      if(id === "jarvisModule") state.showJarvis = status;
+      if(persist) saveState();
+      if(status) aplicarRecolhimento();
+    }
+
+    function aplicarRecolhimento(){
+      ["ganhosModule","jarvisModule"].forEach(id=>{
+        const el = document.getElementById(id);
+        if(!el || el.classList.contains("hidden")) return;
+        el.classList.remove("collapsed");
+        clearTimeout(el._collapseTimer);
+        el._collapseTimer = setTimeout(()=>{
+          if(!el.classList.contains("hidden")) el.classList.add("collapsed");
+        }, (state.timer * 1000) + 2000);
+      });
+    }
+
+    document.getElementById("timerRange").addEventListener("input", e=> ajustarTimer(e.target.value));
+    document.getElementById("swGanhos").addEventListener("change", e=> toggleModulo("ganhosModule","prefGanhos",e.target.checked));
+    document.getElementById("swJarvis").addEventListener("change", e=> toggleModulo("jarvisModule","prefJarvis",e.target.checked));
+
+    let fakeSpeed = 0;
+    setInterval(()=>{
+      fakeSpeed = fakeSpeed >= 78 ? 0 : fakeSpeed + 6;
+      const speedEl = document.getElementById("startSpeedInfo");
+      if(speedEl) speedEl.textContent = `Velocidade ${fakeSpeed} km/h`;
+    }, 2000);
+
+    let badgeToggle = true;
+    setInterval(()=>{
+      const mapBadge = document.getElementById("mapBadge");
+      if(!mapBadge) return;
+      mapBadge.textContent = badgeToggle ? "🟢 Ativo" : "🔵 Atualizando";
+      mapBadge.className = badgeToggle ? "signal good" : "signal warn";
+      badgeToggle = !badgeToggle;
+    }, 2500);
+
+    function initApp(){
+      loadState();
+      buildPixQr();
+      updateUserUI();
+      updateTrialUI();
+      updateStartStatus();
+      renderRide(rideSamples[state.rideIndex] || rideSamples[0]);
+      atualizarPlayerUI();
+      updateCurralUI();
+      applyCurralSettings();
+      aplicarRecolhimento();
+      iniciarRastreamentoGPS();
+      switchAuthTab("login");
+    }
+
+    initApp();
+  </script>
+</body>
+</html>
